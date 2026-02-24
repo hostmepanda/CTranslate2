@@ -22,8 +22,44 @@
 #define CUDA_R_32I HIP_R_32I
 #define CUBLAS_GEMM_DEFAULT HIPBLAS_GEMM_DEFAULT
 #define cublasSgemmStridedBatched hipblasSgemmStridedBatched
-#define cublasGemmEx hipblasGemmEx
-#define cublasGemmStridedBatchedEx hipblasGemmStridedBatchedEx
+// hipblasGemmEx in ROCm 6.x uses hipblasDatatype_t for computeType, not hipblasComputeType_t
+// We wrap it to cast the type correctly and add the required algo parameter
+inline hipblasStatus_t cublasGemmEx(
+    hipblasHandle_t handle,
+    hipblasOperation_t transA, hipblasOperation_t transB,
+    int m, int n, int k,
+    const void* alpha,
+    const void* A, hipDataType Atype, int lda,
+    const void* B, hipDataType Btype, int ldb,
+    const void* beta,
+    void* C, hipDataType Ctype, int ldc,
+    hipblasComputeType_t computeType,
+    hipblasGemmAlgo_t algo) {
+  return hipblasGemmEx(handle, transA, transB, m, n, k,
+                       alpha, A, (hipblasDatatype_t)Atype, lda, B, (hipblasDatatype_t)Btype, ldb,
+                       beta, C, (hipblasDatatype_t)Ctype, ldc,
+                       (hipblasDatatype_t)computeType, algo);
+}
+
+inline hipblasStatus_t cublasGemmStridedBatchedEx(
+    hipblasHandle_t handle,
+    hipblasOperation_t transA, hipblasOperation_t transB,
+    int m, int n, int k,
+    const void* alpha,
+    const void* A, hipDataType Atype, int lda, long long strideA,
+    const void* B, hipDataType Btype, int ldb, long long strideB,
+    const void* beta,
+    void* C, hipDataType Ctype, int ldc, long long strideC,
+    int batchCount,
+    hipblasComputeType_t computeType,
+    hipblasGemmAlgo_t algo) {
+  return hipblasGemmStridedBatchedEx(handle, transA, transB, m, n, k,
+                                     alpha, A, (hipblasDatatype_t)Atype, lda, strideA,
+                                     B, (hipblasDatatype_t)Btype, ldb, strideB,
+                                     beta, C, (hipblasDatatype_t)Ctype, ldc, strideC,
+                                     batchCount,
+                                     (hipblasDatatype_t)computeType, algo);
+}
 #else
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
