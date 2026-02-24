@@ -432,7 +432,9 @@ namespace ctranslate2 {
           for (index_t i = 0; i < C10_WARP_SIZE; ++i) {
             warpVal = r(warpVal, smem[lane * C10_WARP_SIZE + i]);
           }
-          __syncwarp(mask);
+#ifdef __HIP_DEVICE_COMPILE__
+          __builtin_amdgcn_wave_barrier();
+#endif
           smem[lane] = warpVal;
         }
       }

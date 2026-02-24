@@ -255,6 +255,11 @@ namespace ctranslate2 {
     __device__ __forceinline__ float warp_reduce_sum(float sum) {
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 750
       assert(false);
+#elif defined(__HIP_PLATFORM_AMD__)
+#pragma unroll
+      for(int i = 4; i >= 0; i--){
+        sum += __shfl_down(sum, 1<<i);
+      }
 #else
 #pragma unroll
       for(int i = 4; i >= 0; i--){
